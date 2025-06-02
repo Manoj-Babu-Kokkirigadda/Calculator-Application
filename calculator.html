@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Real-Time Calculator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+  :root {
+    --primary-color: #4a90e2;
+    --background-color: #f4f7fa;
+    --button-color: #ffffff;
+    --button-hover: #e1e8f8;
+    --button-active: #d0d9f7;
+    --text-color: #333333;
+    --operator-color: #f39c12;
+    --operator-hover: #e67e22;
+    --history-bg: #ffffff;
+    --history-border: #ddd;
+    --history-item-hover: #f0f4ff;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: var(--background-color);
+    font-family: 'Roboto Mono', monospace;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 40px;
+    min-height: 100vh;
+  }
+  .calculator-container {
+    display: flex;
+    gap: 30px;
+    max-width: 900px;
+    width: 100%;
+    padding: 0 20px;
+  }
+  .calculator {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    width: 320px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .expression {
+    font-size: 1rem;
+    color: #666;
+    min-height: 24px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: #e9eff9;
+    user-select: none;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .display {
+    background: #222;
+    color: #fff;
+    font-size: 2.5rem;
+    text-align: right;
+    padding: 15px 20px;
+    border-radius: 10px;
+    user-select: none;
+    min-height: 60px;
+    overflow-x: auto;
+    margin-top: 8px;
+  }
+  .live-result {
+    font-size: 1.1rem;
+    color: #4caf50;
+    text-align: right;
+    min-height: 22px;
+    opacity: 0.8;
+    margin-top: 6px;
+    user-select: none;
+    overflow-x: auto;
+  }
+  .buttons {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-gap: 15px;
+  }
+  button {
+    background: var(--button-color);
+    border: none;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    padding: 18px 0;
+    color: var(--text-color);
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(74,144,226,0.2);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
+  }
+  button:hover {
+    background: var(--button-hover);
+  }
+  button:active {
+    background: var(--button-active);
+    box-shadow: inset 0 4px 8px rgba(74,144,226,0.3);
+  }
+  button.operator {
+    color: var(--operator-color);
+    font-weight: 700;
+    box-shadow: 0 4px 8px rgba(243,156,18,0.3);
+  }
+  button.operator:hover {
+    background: var(--operator-hover);
+    color: white;
+  }
+  button.span-two {
+    grid-column: span 2;
+  }
+  /* History Styling */
+  .history-panel {
+    background: var(--history-bg);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    width: 320px;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .history-title {
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--text-color);
+    margin-bottom: 12px;
+    user-select: none;
+  }
+  .history-list {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 460px;
+  }
+  .history-item {
+    border-bottom: 1px solid var(--history-border);
+    padding: 10px 8px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    display: flex;
+    justify-content: space-between;
+    font-size: 1rem;
+    color: #444;
+    font-family: 'Roboto Mono', monospace;
+  }
+  .history-item:hover {
+    background-color: var(--history-item-hover);
+  }
+  .history-expression {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .history-result {
+    font-weight: 700;
+    margin-left: 10px;
+    color: var(--primary-color);
+    user-select: text;
+  }
+  .clear-history-btn {
+    background: var(--button-color);
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    padding: 12px;
+    color: var(--text-color);
+    cursor: pointer;
+    margin-top: 15px;
+    box-shadow: 0 4px 8px rgba(74,144,226,0.2);
+    transition: background-color 0.2s ease;
+    user-select: none;
+  }
+  .clear-history-btn:hover {
+    background: var(--button-hover);
+  }
+  .clear-history-btn:active {
+    background: var(--button-active);
+  }
+  @media (max-width: 700px) {
+    body {
+      align-items: center;
+      padding-top: 20px;
+    }
+    .calculator-container {
+      flex-direction: column;
+      gap: 20px;
+      max-width: 350px;
+    }
+    .history-panel {
+      max-height: 300px;
+      width: 100%;
+    }
+    .calculator {
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="calculator-container" role="main">
+    <div class="calculator" role="application" aria-label="Calculator">
+      <div class="expression" aria-live="polite" id="expression"></div>
+      <div class="display" id="display">0</div>
+      <div class="live-result" id="liveResult" aria-live="polite"></div>
+      <div class="buttons">
+        <button type="button" class="operator" data-action="clear" aria-label="Clear">C</button>
+        <button type="button" class="operator" data-action="delete" aria-label="Delete last character">⌫</button>
+        <button type="button" class="operator" data-action="divide" aria-label="Divide">÷</button>
+        <button type="button" class="operator" data-action="multiply" aria-label="Multiply">×</button>
+
+        <button type="button" data-number="7" aria-label="7">7</button>
+        <button type="button" data-number="8" aria-label="8">8</button>
+        <button type="button" data-number="9" aria-label="9">9</button>
+        <button type="button" class="operator" data-action="subtract" aria-label="Subtract">−</button>
+
+        <button type="button" data-number="4" aria-label="4">4</button>
+        <button type="button" data-number="5" aria-label="5">5</button>
+        <button type="button" data-number="6" aria-label="6">6</button>
+        <button type="button" class="operator" data-action="add" aria-label="Add">+</button>
+
+        <button type="button" data-number="1" aria-label="1">1</button>
+        <button type="button" data-number="2" aria-label="2">2</button>
+        <button type="button" data-number="3" aria-label="3">3</button>
+        <button type="button" data-number="." aria-label="Decimal point"></button>
+
+        <button type="button" data-number="0" class="span-two" aria-label="0">0</button>
+        <button type="button" class="operator span-two" data-action="equals" aria-label="Equals">=</button>
+      </div>
+    </div>
+    <aside class="history-panel" aria-label="Calculation history">
+      <div class="history-title">History</div>
+      <div class="history-list" id="historyList" tabindex="0" aria-live="polite" aria-relevant="additions"></div>
+      <button class="clear-history-btn" id="clearHistory" aria-label="Clear calculation history">Clear History</button>
+    </aside>
+  </div>
+
+<script>
+(function(){
+  const display = document.getElementById('display');
+  const expressionDisplay = document.getElementById('expression');
+  const liveResultDisplay = document.getElementById('liveResult');
+  const historyList = document.getElementById('historyList');
+  const clearHistoryBtn = document.getElementById('clearHistory');
+
+  let currentInput = '';
+  let expression = '';
+  let resetNext = false;
+  let lastResult = null;
+  let history = [];
+
+  // Util: Sanitize and safely evaluate the expression string
+  function safeEval(exp) {
+    try {
+      // Replace unicode operators with JS operators
+      const sanitized = exp.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+      // Only allow digits, operators and dots, no letters or unexpected chars
+      if (!/^[0-9+\-*/. ()]+$/.test(sanitized)) return null;
+      // eslint-disable-next-line no-new-func
+      const func = new Function('return ' + sanitized);
+      const result = func();
+      if (typeof result === 'number' && isFinite(result)) {
+        return result;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Update UI display for expression and current input
+  function updateDisplays() {
+    expressionDisplay.textContent = expression;
+    display.textContent = currentInput || '0';
+
+    // Show live evaluated result if expression is valid and not showing result already
+    if (expression && !resetNext) {
+      const result = safeEval(expression);
+      if (result !== null && !isNaN(result)) {
+        liveResultDisplay.textContent = '= ' + result;
+        lastResult = result;
+      } else {
+        liveResultDisplay.textContent = '';
+        lastResult = null;
+      }
+    } else {
+      liveResultDisplay.textContent = '';
+      lastResult = null;
+    }
+  }
+
+  // Append number or dot to current input
+  function appendNumber(number) {
+    if (resetNext) {
+      currentInput = number === '.' ? '0.' : number;
+      resetNext = false;
+    } else {
+      if (number === '.' && currentInput.includes('.')) return;
+      if (currentInput === '0' && number !== '.') {
+        currentInput = number;
+      } else {
+        currentInput += number;
+      }
+    }
+    updateDisplays();
+  }
+
+  // Add operator to expression
+  function appendOperator(opSymbol) {
+    if (resetNext) {
+      resetNext = false;
+    }
+
+    if (currentInput) {
+      expression += currentInput + ' ' + opSymbol + ' ';
+      currentInput = '';
+    } else {
+      // if no current input, allow replacing last operator
+      if (expression && /[+\-×÷] $/.test(expression)) {
+        expression = expression.slice(0, -3) + ' ' + opSymbol + ' ';
+      }
+    }
+    updateDisplays();
+  }
+
+  // Calculate the expression and display result
+  function calculate() {
+    if (resetNext) {
+      return;
+    }
+    let expToEval = expression;
+    if (currentInput) {
+      expToEval += currentInput;
+    } else {
+      // Remove trailing operator if no currentInput
+      expToEval = expToEval.trim().replace(/[+\-×÷]$/, '');
+    }
+    if (!expToEval) return;
+
+    const result = safeEval(expToEval);
+    if (result !== null) {
+      currentInput = result.toString();
+      expression = '';
+      resetNext = true;
+      updateDisplays();
+      addHistoryItem(expToEval, result);
+    } else {
+      currentInput = 'Error';
+      expression = '';
+      resetNext = true;
+      updateDisplays();
+    }
+  }
+
+  // Clear all inputs
+  function clearAll() {
+    currentInput = '';
+    expression = '';
+    resetNext = false;
+    updateDisplays();
+  }
+
+  // Delete last character in current input
+  function deleteChar() {
+    if (resetNext || currentInput === 'Error') {
+      clearAll();
+      return;
+    }
+    if (currentInput.length > 0) {
+      currentInput = currentInput.slice(0, -1);
+      if (currentInput === '') {
+        currentInput = '';
+      }
+    }
+    updateDisplays();
+  }
+
+  // Add calculation to history
+  function addHistoryItem(expressionText, result) {
+    history.unshift({ expression: expressionText, result });
+    updateHistory();
+  }
+
+  // Render history list
+  function updateHistory() {
+    historyList.innerHTML = '';
+    if (history.length === 0) {
+      historyList.innerHTML = '<div style="color:#999; user-select:none; padding:10px;">No history yet</div>';
+      return;
+    }
+    history.forEach((item, i) => {
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.tabIndex = 0;
+      div.title = 'Click or Enter to use this calculation';
+      div.innerHTML = `
+        <div class="history-expression">${item.expression}</div>
+        <div class="history-result">${item.result}</div>
+      `;
+      div.addEventListener('click', () => {
+        expression = '';
+        currentInput = item.result.toString();
+        resetNext = true;
+        updateDisplays();
+      });
+      div.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          div.click();
+        }
+      })
+      historyList.appendChild(div);
+    });
+  }
+
+  // Clear history
+  function clearHistory() {
+    history = [];
+    updateHistory();
+  }
+
+  // Button event handling
+  document.querySelectorAll('button').forEach(button => {
+    button.addEventListener('click', () => {
+      if (button.hasAttribute('data-number')) {
+        appendNumber(button.getAttribute('data-number'));
+      } else if (button.hasAttribute('data-action')) {
+        const action = button.getAttribute('data-action');
+        switch (action) {
+          case 'add':
+            appendOperator('+');
+            break;
+          case 'subtract':
+            appendOperator('−');
+            break;
+          case 'multiply':
+            appendOperator('×');
+            break;
+          case 'divide':
+            appendOperator('÷');
+            break;
+          case 'equals':
+            calculate();
+            break;
+          case 'clear':
+            clearAll();
+            break;
+          case 'delete':
+            deleteChar();
+            break;
+        }
+      }
+    });
+  });
+
+  // Keyboard support
+  window.addEventListener('keydown', e => {
+    if (e.defaultPrevented) return;
+
+    if ((e.key >= '0' && e.key <= '9') || e.key === '.') {
+      appendNumber(e.key);
+    } else {
+      switch(e.key) {
+        case '+':
+          appendOperator('+');
+          break;
+        case '-':
+          appendOperator('−');
+          break;
+        case '*':
+          appendOperator('×');
+          break;
+        case '/':
+          appendOperator('÷');
+          break;
+        case 'Enter':
+        case '=':
+          e.preventDefault();
+          calculate();
+          break;
+        case 'Backspace':
+          deleteChar();
+          break;
+        case 'Escape':
+          clearAll();
+          break;
+      }
+    }
+  });
+
+  // Initialize
+  updateDisplays();
+  updateHistory();
+  clearHistoryBtn.addEventListener('click', clearHistory);
+
+})();
+</script>
+</body>
+</html>
+
